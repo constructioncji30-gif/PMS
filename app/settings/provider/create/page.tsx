@@ -60,7 +60,7 @@ export default function ProviderCreation() {
     >
       {/* Personal Information */}
       <CommonFormCard cols={3} title="Personal Information">
-        <div className="grid gap-2">
+         
           <div className="grid grid-cols-2 gap-2">
             <Input label="First Name" type="text" />
             <Input label="Last Name" type="text" />
@@ -75,12 +75,12 @@ export default function ProviderCreation() {
           
           <Input label="National Provider Identifier (NPI)" type="text" />
           <Input label="License Number" type="text" />
-        </div>
+        
       </CommonFormCard>
 
       {/* Professional Information */}
       <CommonFormCard title="Professional Information">
-        <div className="grid gap-2" >
+         
           <Dropdown label="Provider Type" options={providerTypeOptions}/>
             
           <CheckBox
@@ -92,12 +92,12 @@ export default function ProviderCreation() {
           <Input label="Department" type="text" />
           <Dropdown label="Status" options={statusOptions}/>
             
-        </div>
+        
       </CommonFormCard>
 
       {/* Contact Information */}
       <CommonFormCard title="Contact Information">
-        <div className="grid gap-2">
+      
           <Input label="Phone Number" type="text" />
           <Input label="Email" type="email" />
           <Input label="Address Line 1" type="text" />
@@ -108,12 +108,12 @@ export default function ProviderCreation() {
           </div>
           <Input label="Zip Code" type="text" />
           <Input label="Country" type="text" />
-        </div>
+      
       </CommonFormCard>
 
       {/* Work Information */}
       <CommonFormCard title="Work Information">
-        <div className="grid gap-2">
+        
           <Input label="Affiliated Practice/Hospital" type="text" />
           <div className="grid grid-cols-2 gap-2">
             <Input label="Start Time" type="time" />
@@ -125,7 +125,7 @@ export default function ProviderCreation() {
             checked={workingDays}
             onClick={()=>{}}
           />
-        </div>
+      
       </CommonFormCard>
 
       {/* Languages Spoken */}
@@ -139,12 +139,12 @@ onClick={()=>{}}        />
 
       {/* Insurance Information */}
       <CommonFormCard title="Insurance Information">
-        <div className="grid gap-2">
+        
           <Input label="Insurance Provider" type="text" />
           <Input label="Insurance Policy Number" type="text" />
           <Input label="Insurance Group Number" type="text" />
           <Input label="Insurance Phone" type="text" />
-        </div>
+        
       </CommonFormCard>
 
       {/* Additional Information */}
