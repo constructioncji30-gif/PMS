@@ -8,9 +8,7 @@ import Modal from "../component/Modal";
 import { useState } from "react";
 import Button from "../component/Button";
 import NewAppointmentForm from "./NewAppointment";
- 
- 
- 
+
 export default function Index() {
   const practiceOptions = [
     { label: "Physician", value: "physician" },
@@ -28,10 +26,9 @@ export default function Index() {
     { label: "Other", value: "other" },
   ];
   const [isOpen, setIsOpen] = useState(false);
-
-//  const count = useAppSelector((state) => state.counter.value); 
-//   console.log(count);
-   return (
+  const [paientData, setPatientData] = useState([]);
+ 
+  return (
     <>
       {" "}
       {isOpen && (
@@ -40,7 +37,7 @@ export default function Index() {
           title="New Appointment"
           icon={<span>📅</span>}
         >
-          <NewAppointmentForm />
+          <NewAppointmentForm setPatientData={setPatientData} close={() => setIsOpen(false)} />
         </Modal>
       )}
       <CommonCard
@@ -72,7 +69,7 @@ export default function Index() {
                     <div key={period} className="mb-4 font-medium text-sm">
                       {hours.map((hour) => (
                         <div key={`${period}-${hour}`}>
-                          {minutes.map((minute,index) => (
+                          {minutes.map((minute, index) => (
                             <div
                               key={`${period}-${hour}-${minute}`}
                               className="flex flex-row items-stretch w-full"
@@ -82,16 +79,33 @@ export default function Index() {
                                 className="bg-lime-100 text-black my-1 rounded-lg 
                                h-24 w-24 border border-lime-300 
                                flex items-center justify-center flex-shrink-0 cursor-pointer"
+                                onClick={
+                                  paientData?.some(
+                                    (i: any) =>
+                                      i.startTime?.split(":")[0] == hour
+                                  )
+                                    ? () => {}
+                                    : () => setIsOpen(true)
+                                }
+                                title={paientData?.some(
+                                    (i: any) =>
+                                      i.startTime?.split(":")[0] == hour
+                                  )?'':'Click to Add Appointment'}
                               >
                                 {hour}:{minute.toString().padStart(2, "0")}{" "}
                                 {period}
                               </div>
 
                               {/* Extra section (only for hour 1 or 5) */}
-                              {(hour === 1 || hour === 5) && (
-                                <div className="flex-1 bg-slate-400 m-1 rounded-md flex items-center justify-center text-white">
-                                  Patient-{index+1}
-                                </div>
+                              {paientData?.map(
+                                (i: any) =>
+                                  i.startTime?.split(":")[0] == hour && (
+                                    <div className="flex-1 bg-slate-400 m-1 rounded-md flex items-center justify-center text-white">
+                                      {i.startTime == `0${hour}:${minute.toString().padStart(2, "0")}`
+                                        ? i.patient
+                                        : ""}
+                                    </div>
+                                  )
                               )}
                             </div>
                           ))}

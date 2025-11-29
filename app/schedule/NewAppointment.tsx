@@ -38,7 +38,7 @@ const appointmentTypes = [
   { id: "tele", label: "Tele Visit" },
 ];
 
-const NewAppointmentForm = () => {
+const NewAppointmentForm = ({setPatientData,close}:any) => {
   const [formData, setFormData] = useState({
     patient: "",
     location: "",
@@ -60,8 +60,9 @@ const NewAppointmentForm = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form Submitted:", formData);
-    // Call API or save to database
+setPatientData((prev:any)=>[...prev,formData])
+close()
+
   };
 
   return (
