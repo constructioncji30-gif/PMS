@@ -5,46 +5,70 @@ import Button from "@/app/component/Button";
 import Input from "@/app/component/Input";
 import Dropdown from "@/app/component/Dropdown";
 import CommonFormCard from "@/app/component/CommonFormCard";
-import TextAea from "../component/TextAea";
+ import TextAea from "../component/TextAea";
 
-const doctors = [
+interface AppointmentFormData {
+  patient: string;
+  location: string;
+  provider: string;
+  date: string;
+  startTime: string;
+  duration: string;
+  status: string;
+  appointmentType: string;
+  reason: string;
+  comments: string;
+}
+
+interface DropdownOption {
+  id: string | number;
+  label: string;
+}
+
+interface NewAppointmentFormProps {
+  setPatientData: (data: any) => void;
+  close: () => void;
+  selectedTime?: string | null;
+}
+
+const doctors: DropdownOption[] = [
   { id: 1, label: "BEECHLER, LAURI" },
   { id: 2, label: "Dr. John Doe" },
   { id: 3, label: "Dr. Jane Smith" },
 ];
 
-const locations = [
+const locations: DropdownOption[] = [
   { id: "aspire", label: "Aspire Regenerative Wound Care" },
   { id: "cityclinic", label: "City Clinic" },
   { id: "healthcenter", label: "Health Center" },
 ];
 
-const statusOptions = [
+const statusOptions: DropdownOption[] = [
   { id: "pending", label: "Pending" },
   { id: "scheduled", label: "Scheduled" },
   { id: "completed", label: "Completed" },
   { id: "cancelled", label: "Cancelled" },
 ];
 
-const durationOptions = [
+const durationOptions: DropdownOption[] = [
   { id: "10", label: "10 min" },
   { id: "20", label: "20 min" },
   { id: "30", label: "30 min" },
   { id: "60", label: "60 min" },
 ];
 
-const appointmentTypes = [
+const appointmentTypes: DropdownOption[] = [
   { id: "office", label: "Office Visit" },
   { id: "tele", label: "Tele Visit" },
 ];
 
-const NewAppointmentForm = ({setPatientData,close}:any) => {
-  const [formData, setFormData] = useState({
+const NewAppointmentForm = ({ setPatientData, close, selectedTime }: NewAppointmentFormProps) => {
+  const [formData, setFormData] = useState<AppointmentFormData>({
     patient: "",
     location: "",
     provider: "",
     date: "",
-    startTime: "",
+    startTime: selectedTime ? selectedTime.split(" ")[0] : "", // Extract time from selectedTime
     duration: "",
     status: "pending",
     appointmentType: "",
@@ -52,17 +76,41 @@ const NewAppointmentForm = ({setPatientData,close}:any) => {
     comments: "",
   });
 
-  const handleChange = (name: string, value: any) => {
-    console.log(value);
-    
-    setFormData({ ...formData, [name]: value });
+  // Update startTime when selectedTime changes
+  React.useEffect(() => {
+    if (selectedTime) {
+      const timePart = selectedTime.split(" ")[0];
+      setFormData(prev => ({ ...prev, startTime: timePart }));
+    }
+  }, [selectedTime]);
+
+  const handleChange = (name: keyof AppointmentFormData, value: string) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleDropdownChange = (name: keyof AppointmentFormData) => (val: any) => {
+    // Handle both event objects and direct values
+    const value = val?.target?.value !== undefined ? val.target.value : val;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-setPatientData((prev:any)=>[...prev,formData])
-close()
+    
+    // Validate required fields
+    if (!formData.patient || !formData.date || !formData.startTime) {
+      alert("Please fill in all required fields: Patient, Date, and Start Time");
+      return;
+    }
 
+    // Add the new appointment
+    setPatientData((prev: AppointmentFormData[]) => [...prev, formData]);
+    close();
+  };
+
+  // Get current date in YYYY-MM-DD format for the date input min attribute
+  const getTodayDate = () => {
+    return new Date().toISOString().split('T')[0];
   };
 
   return (
@@ -82,14 +130,14 @@ close()
           label="Location"
           options={locations}
           value={formData.location}
-          onChange={(val) => handleChange("location", val.target.value)}
+          onChange={handleDropdownChange("location")}
         />
 
         <Dropdown
           label="Provider"
           options={doctors}
           value={formData.provider}
-          onChange={(val) => handleChange("provider", val.target.value)}
+          onChange={handleDropdownChange("provider")}
         />
 
         <Input
@@ -97,6 +145,7 @@ close()
           type="date"
           value={formData.date}
           onChange={(e) => handleChange("date", e.target.value)}
+          min={getTodayDate()}
           required
         />
 
@@ -112,21 +161,21 @@ close()
           label="Duration"
           options={durationOptions}
           value={formData.duration}
-          onChange={(val) => handleChange("duration", val.target.value)}
+          onChange={handleDropdownChange("duration")}
         />
 
         <Dropdown
           label="Status"
           options={statusOptions}
           value={formData.status}
-          onChange={(val) => handleChange("status", val.target.value)}
+          onChange={handleDropdownChange("status")}
         />
 
         <Dropdown
           label="Appointment Type"
           options={appointmentTypes}
           value={formData.appointmentType}
-          onChange={(val) => handleChange("appointmentType", val.target.value)}
+          onChange={handleDropdownChange("appointmentType")}
         />
 
         <Input
@@ -135,16 +184,28 @@ close()
           onChange={(e) => handleChange("reason", e.target.value)}
           placeholder="Enter visit reason"
         />
+        
         <div className="col-span-2">
           <TextAea
             label="Comments"
             value={formData.comments}
-            onChange={(e) => handleChange("comments", e.target.value)}
+            onChange={(e:any) => handleChange("comments", e.target.value)}
             placeholder="Additional comments"
+            rows={4}
           />
         </div>
-        <div className="text-right col-span-2">
-          <Button type="submit">Save</Button>
+        
+        <div className="flex justify-end gap-3 col-span-2 mt-4">
+          <Button 
+            type="button" 
+            varient="secondary" 
+            onClick={close}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" varient="primary">
+            Save Appointment
+          </Button>
         </div>
       </CommonFormCard>
     </form>
