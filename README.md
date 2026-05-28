@@ -91,30 +91,7 @@ CREATE TABLE provider (
     modifiedBy NVARCHAR(100) NULL
 );
 
--- Create indexes for frequently queried columns
-CREATE INDEX IX_provider_lastName ON provider(lastName);
-CREATE INDEX IX_provider_npi ON provider(nationalProviderIdentifier);
-CREATE INDEX IX_provider_licenseNumber ON provider(licenseNumber);
-CREATE INDEX IX_provider_status ON provider(status);
-CREATE INDEX IX_provider_providerType ON provider(providerType);
-CREATE INDEX IX_provider_department ON provider(department);
-CREATE INDEX IX_provider_email ON provider(email);
-CREATE INDEX IX_provider_affiliatedPractice ON provider(affiliatedPracticeHospital);
-CREATE INDEX IX_provider_dateOfBirth ON provider(dateOfBirth);
-
--- Trigger to automatically update modifiedDate
-CREATE TRIGGER trg_provider_modifiedDate
-ON provider
-AFTER UPDATE
-AS
-BEGIN
-    SET NOCOUNT ON;
-    UPDATE provider
-    SET modifiedDate = GETDATE()
-    FROM provider p
-    INNER JOIN inserted i ON p.providerId = i.providerId;
-END;
-
+ 
 
 
 CREATE TABLE patient (
@@ -198,17 +175,7 @@ CREATE TABLE patient (
     modifiedBy NVARCHAR(100) NULL
 );
 
--- Create indexes for frequently queried columns
-CREATE INDEX IX_patient_lastName ON patient(lastName);
-CREATE INDEX IX_patient_dob ON patient(dob);
-CREATE INDEX IX_patient_ssn ON patient(ssn);
-CREATE INDEX IX_patient_status ON patient(status);
-CREATE INDEX IX_patient_insurancePolicyNumber ON patient(insurancePolicyNumber);
-CREATE INDEX IX_patient_primaryPhysician ON patient(primaryPhysician);
-
-
-
-
+- 
 
 
 
@@ -272,30 +239,187 @@ CREATE TABLE practice (
     createdBy NVARCHAR(100) NULL,
     modifiedBy NVARCHAR(100) NULL
 );
+ 
 
--- Create indexes for frequently queried columns
-CREATE INDEX IX_practice_practiceName ON practice(practiceName);
-CREATE INDEX IX_practice_practiceIdentifier ON practice(practiceIdentifier);
-CREATE INDEX IX_practice_licenseNumber ON practice(licenseNumber);
-CREATE INDEX IX_practice_practiceType ON practice(practiceType);
-CREATE INDEX IX_practice_city ON practice(city);
-CREATE INDEX IX_practice_state ON practice(state);
-CREATE INDEX IX_practice_zip ON practice(zip);
-CREATE INDEX IX_practice_phone ON practice(phone);
-CREATE INDEX IX_practice_email ON practice(email);
-CREATE INDEX IX_practice_isActive ON practice(isActive);
-CREATE INDEX IX_practice_adminName ON practice(adminName);
-CREATE INDEX IX_practice_adminEmail ON practice(adminEmail);
+CREATE TABLE [user] (
+    -- Primary Key
+    userId INT IDENTITY(1,1) PRIMARY KEY,
+    
+    -- Basic User Information
+    username NVARCHAR(100) NOT NULL UNIQUE,
+    email NVARCHAR(200) NOT NULL UNIQUE,
+    passwordHash NVARCHAR(255) NOT NULL,  -- Store hashed password, never plain text
+    passwordSalt NVARCHAR(255) NULL,      -- For additional security
+    
+    -- Personal Information
+    firstName NVARCHAR(100) NOT NULL DEFAULT '',
+    lastName NVARCHAR(100) NOT NULL DEFAULT '',
+    middleName NVARCHAR(100) NOT NULL DEFAULT '',
+    prefixTitle NVARCHAR(50) NOT NULL DEFAULT '',
+    suffix NVARCHAR(50) NOT NULL DEFAULT '',
+    dateOfBirth DATE NULL,
+    gender NVARCHAR(20) NOT NULL DEFAULT '',
+    
+    -- Contact Information
+    phoneNumber NVARCHAR(20) NOT NULL DEFAULT '',
+    cellPhone NVARCHAR(20) NOT NULL DEFAULT '',
+    address1 NVARCHAR(200) NOT NULL DEFAULT '',
+    address2 NVARCHAR(200) NOT NULL DEFAULT '',
+    city NVARCHAR(100) NOT NULL DEFAULT '',
+    state NVARCHAR(50) NOT NULL DEFAULT '',
+    zip NVARCHAR(20) NOT NULL DEFAULT '',
+    country NVARCHAR(100) NOT NULL DEFAULT '',
+    
+    -- Professional Information
+    employeeId NVARCHAR(50) NULL,  -- Internal employee ID
+    jobTitle NVARCHAR(100) NOT NULL DEFAULT '',
+    department NVARCHAR(100) NOT NULL DEFAULT '',
+    
+    -- Role & Permissions
+    role NVARCHAR(50) NOT NULL DEFAULT 'user',  -- 'admin', 'provider', 'nurse', 'receptionist', 'user'
+    permissions NVARCHAR(MAX) NOT NULL DEFAULT '[]',  -- JSON array of custom permissions
+    
+    -- Account Status
+    isActive BIT NOT NULL DEFAULT 1,
+    isLocked BIT NOT NULL DEFAULT 0,
+    isEmailVerified BIT NOT NULL DEFAULT 0,
+    isPhoneVerified BIT NOT NULL DEFAULT 0,
+    
+    -- Authentication & Security
+    lastLoginDate DATETIME2 NULL,
+    lastLoginIP NVARCHAR(45) NULL,  -- Supports IPv4 and IPv6
+    failedLoginAttempts INT NOT NULL DEFAULT 0,
+    lastFailedLoginDate DATETIME2 NULL,
+    accountLockoutEndDate DATETIME2 NULL,
+    passwordLastChangedDate DATETIME2 NOT NULL DEFAULT GETDATE(),
+    passwordExpiryDate DATETIME2 NULL,  -- For password expiration policy
+    requiresPasswordReset BIT NOT NULL DEFAULT 0,
+    
+    -- Two-Factor Authentication (2FA)
+    isTwoFactorEnabled BIT NOT NULL DEFAULT 0,
+    twoFactorSecret NVARCHAR(255) NULL,  -- TOTP secret key
+    
+    -- Refresh Tokens (for JWT authentication)
+    refreshToken NVARCHAR(255) NULL,
+    refreshTokenExpiryDate DATETIME2 NULL,
+    
+    -- Relationships to other tables
+    associatedProviderId INT NULL,  -- FK to provider table if user is a provider
+    associatedPracticeId INT NULL,  -- FK to practice table
+    
+    -- Preferences
+    languagePreference NVARCHAR(10) NOT NULL DEFAULT 'en',
+    timezone NVARCHAR(100) NOT NULL DEFAULT 'UTC',
+    dateFormat NVARCHAR(20) NOT NULL DEFAULT 'MM/DD/YYYY',
+    notificationPreferences NVARCHAR(MAX) NOT NULL DEFAULT '[]',  -- JSON array
+    
+    -- Additional Information
+    profileImageUrl NVARCHAR(500) NULL,
+    notes NVARCHAR(MAX) NOT NULL DEFAULT '',
+    
+    -- Audit Fields
+    createdDate DATETIME2 NOT NULL DEFAULT GETDATE(),
+    modifiedDate DATETIME2 NOT NULL DEFAULT GETDATE(),
+    createdBy INT NULL,  -- userId who created this record
+    modifiedBy INT NULL,  -- userId who last modified this record
+    lastModifiedIP NVARCHAR(45) NULL,
+    
+    -- Foreign Keys (if referencing other tables)
+    FOREIGN KEY (associatedProviderId) REFERENCES provider(providerId),
+    FOREIGN KEY (associatedPracticeId) REFERENCES practice(practiceId)
+);
 
--- Trigger to automatically update modifiedDate
-CREATE TRIGGER trg_practice_modifiedDate
-ON practice
-AFTER UPDATE
-AS
-BEGIN
-    SET NOCOUNT ON;
-    UPDATE practice
-    SET modifiedDate = GETDATE()
-    FROM practice p
-    INNER JOIN inserted i ON p.practiceId = i.practiceId;
-END;
+
+
+
+CREATE TABLE appointment (
+    -- Primary Key
+    appointmentId INT IDENTITY(1,1) PRIMARY KEY,
+    
+    -- Patient Information
+    patientId INT NOT NULL,  -- FK to patient table
+    patientName NVARCHAR(200) NOT NULL DEFAULT '',  -- Denormalized for quick display
+    
+    -- Location & Provider Information
+    locationId NVARCHAR(100) NOT NULL DEFAULT '',  -- Location identifier
+    locationName NVARCHAR(200) NOT NULL DEFAULT '',  -- Denormalized location name
+    providerId INT NULL,  -- FK to provider table
+    providerName NVARCHAR(200) NOT NULL DEFAULT '',  -- Denormalized provider name
+    
+    -- Appointment Date & Time
+    appointmentDate DATE NOT NULL,
+    startTime TIME NOT NULL,
+    endTime TIME NULL,  -- Calculated from startTime + duration
+    duration INT NOT NULL DEFAULT 30,  -- Duration in minutes
+    
+    -- Appointment Status
+    status NVARCHAR(50) NOT NULL DEFAULT 'pending',  -- 'pending', 'scheduled', 'completed', 'cancelled'
+    
+    -- Appointment Type
+    appointmentType NVARCHAR(50) NOT NULL DEFAULT '',  -- 'office', 'tele'
+    
+    -- Additional Information
+    visitReason NVARCHAR(500) NOT NULL DEFAULT '',
+    comments NVARCHAR(MAX) NOT NULL DEFAULT '',
+    
+    -- Tracking Fields
+    isRecurring BIT NOT NULL DEFAULT 0,
+    recurringParentId INT NULL,  -- For recurring appointments, points to parent appointment
+    recurrencePattern NVARCHAR(200) NULL,  -- JSON or text describing recurrence
+    
+    -- Notification & Reminder Settings
+    reminderSent BIT NOT NULL DEFAULT 0,
+    reminderSentDate DATETIME2 NULL,
+    patientConfirmed BIT NOT NULL DEFAULT 0,
+    patientConfirmedDate DATETIME2 NULL,
+    
+    -- Check-in/Check-out Times
+    checkInTime DATETIME2 NULL,
+    checkOutTime DATETIME2 NULL,
+    actualStartTime DATETIME2 NULL,
+    actualEndTime DATETIME2 NULL,
+    
+    -- Wait Time Tracking
+    waitTimeMinutes INT NULL,  -- Time between check-in and actual start
+    
+    -- Cancellation Information
+    cancelledDate DATETIME2 NULL,
+    cancelledBy NVARCHAR(100) NULL,
+    cancellationReason NVARCHAR(500) NULL,
+    
+    -- Billing Information
+    isBilled BIT NOT NULL DEFAULT 0,
+    billedAmount DECIMAL(10, 2) NULL,
+    billingCode NVARCHAR(50) NULL,  -- CPT/ICD code
+    insuranceClaimSubmitted BIT NOT NULL DEFAULT 0,
+    
+    -- Audit Fields
+    createdDate DATETIME2 NOT NULL DEFAULT GETDATE(),
+    modifiedDate DATETIME2 NOT NULL DEFAULT GETDATE(),
+    createdBy INT NULL,  -- User ID who created
+    modifiedBy INT NULL,  -- User ID who last modified
+    createdByIP NVARCHAR(45) NULL,
+    
+    -- Foreign Keys
+    FOREIGN KEY (patientId) REFERENCES patient(patientId),
+    FOREIGN KEY (providerId) REFERENCES provider(providerId),
+    FOREIGN KEY (recurringParentId) REFERENCES appointment(appointmentId)
+);
+
+ 
+
+ CREATE TABLE location (
+    -- Primary Key
+    locationId INT IDENTITY(1,1) PRIMARY KEY,
+    
+    -- Basic Location Information
+    locationCode NVARCHAR(50) NOT NULL UNIQUE,  -- Short code like 'aspire', 'cityclinic'
+    locationName NVARCHAR(200) NOT NULL,  -- Full name like 'Aspire Regenerative Wound Care'
+    locationType NVARCHAR(50) NOT NULL DEFAULT '',  -- 'clinic', 'hospital', 'urgent_care', 'office'
+    
+    -- Description
+    description NVARCHAR(500) NOT NULL DEFAULT '',
+    
+);
+
+ 
