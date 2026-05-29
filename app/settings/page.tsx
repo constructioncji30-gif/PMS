@@ -19,6 +19,7 @@ const links = [
   { href: "/settings/practice", label: "Practices", icon: <Building2 size={size} /> },
   { href: "/settings/insurance", label: "Insurance", icon: <ShieldCheck size={size} /> },
   { href: "/settings/services", label: "Services", icon: <BriefcaseMedical size={size} /> },
+  { href: "/settings/user", label: "User", icon: <BriefcaseMedical size={size} /> },
 ];
 
 export default function Index() {

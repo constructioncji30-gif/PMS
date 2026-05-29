@@ -76,7 +76,7 @@ export default function PatientGridPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  // Debounce search
+  // Debounce searc
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchTerm);
@@ -88,7 +88,7 @@ export default function PatientGridPage() {
   const fetchPatients = async () => {
     try {
       setLoading(true);
-      let url = `${API_BASE_URL}/patients`;
+      let url = `${API_BASE_URL}/permissions`;
       if (debouncedSearch) {
         url = `${API_BASE_URL}/patients?search=${encodeURIComponent(debouncedSearch)}`;
       }
