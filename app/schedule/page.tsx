@@ -116,6 +116,8 @@ export default function SchedulerPage() {
         headers: { "Authorization": `Bearer ${token}` }
       });
       const data = await response.json();
+      
+      
       if (data.success) {
         setProviders(data.providers || []);
       }
@@ -285,6 +287,7 @@ export default function SchedulerPage() {
       value: p.providerId.toString() 
     }))
   ];
+ 
 
   // Generate time slots (9 AM to 5 PM, 30-minute intervals)
   const hours = [9, 10, 11, 12, 13, 14, 15, 16]; // 9 AM to 4 PM
