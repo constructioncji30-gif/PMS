@@ -11,15 +11,15 @@ import NewAppointmentForm from "./NewAppointment";
 
 interface Appointment {
   appointmentId: number;
-  startTime: string;
-  endTime: string;
+  startTime: any;
+  endTime: any;
   patientName: string;
   patientId: number;
   providerName: string;
   providerId: number;
   status: string;
   appointmentType: string;
-  period: "AM" | "PM";
+  appointmentDate: string;
 }
 
 interface DropdownOption {
@@ -41,6 +41,41 @@ interface Provider {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
+// Helper function to format time
+const formatTime = (time: string): string => {
+  if (!time) return "";
+  // If it's a full timestamp (contains T)
+  if (time.includes('T')) {
+    const date = new Date(time);
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+  }
+  // If it's already HH:MM:SS format, extract HH:MM
+  if (time.includes(':')) {
+    const parts = time.split(':');
+    return `${parts[0]}:${parts[1]}`;
+  }
+  return time;
+};
+
+// Helper function to extract hour for slot matching
+const getHourFromTime = (time: string): number => {
+  if (!time) return 0;
+  if (time.includes('T')) {
+    return new Date(time).getHours();
+  }
+  const hour = parseInt(time.split(':')[0]);
+  return hour;
+};
+
+// Helper function to get period (AM/PM)
+const getPeriod = (hour: number): "AM" | "PM" => {
+  return hour >= 12 ? "PM" : "AM";
+};
+
 export default function SchedulerPage() {
   const [practices, setPractices] = useState<Practice[]>([]);
   const [providers, setProviders] = useState<Provider[]>([]);
@@ -50,7 +85,7 @@ export default function SchedulerPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [selectedTime, setSelectedTime] = useState<any | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<"AM" | "PM">("AM");
 
   // Fetch practices
@@ -107,24 +142,13 @@ export default function SchedulerPage() {
       const data = await response.json();
       
       if (data.success) {
-        // Transform appointments to include period
-        const formattedAppointments = (data.appointments || []).map((apt: any) => ({
-          ...apt,
-          period: getPeriodFromTime(apt.startTime)
-        }));
-        setAppointments(formattedAppointments);
+        setAppointments(data.appointments || []);
       }
     } catch (error) {
       console.error("Error fetching appointments:", error);
     } finally {
       setLoading(false);
     }
-  };
-
-  // Get period from time string
-  const getPeriodFromTime = (time: string): "AM" | "PM" => {
-    const hour = parseInt(time.split(':')[0]);
-    return hour >= 12 ? "PM" : "AM";
   };
 
   // Create appointment
@@ -142,7 +166,7 @@ export default function SchedulerPage() {
       
       const data = await response.json();
       if (data.success) {
-        await fetchAppointments(); // Refresh appointments
+        await fetchAppointments();
         return true;
       }
       return false;
@@ -174,19 +198,6 @@ export default function SchedulerPage() {
     }
   };
 
-  // Convert time to minutes for comparison
-  const toMinutes = (time: string, period: "AM" | "PM"): number => {
-    let [hour, minute] = time.split(':').map(Number);
-    
-    if (period === "PM" && hour !== 12) {
-      hour += 12;
-    } else if (period === "AM" && hour === 12) {
-      hour = 0;
-    }
-    
-    return hour * 60 + minute;
-  };
-
   // Handle schedule click
   const handleSchedule = (time: string, period: "AM" | "PM") => {
     setSelectedTime(time);
@@ -196,6 +207,15 @@ export default function SchedulerPage() {
 
   // Handle add appointment
   const handleAddAppointment = async (formData: any) => {
+    // Convert 12-hour format to 24-hour format for API
+    let startTime24 = selectedTime;
+    if (selectedPeriod === "PM" && parseInt(selectedTime?.split(':')[0]) !== 12) {
+      const hour = parseInt(selectedTime?.split(':')[0]) + 12;
+      startTime24 = `${hour}:${selectedTime?.split(':')[1]}`;
+    } else if (selectedPeriod === "AM" && parseInt(selectedTime?.split(':')[0]) === 12) {
+      startTime24 = `00:${selectedTime?.split(':')[1]}`;
+    }
+    
     const appointmentData = {
       patientId: formData.patientId,
       patientName: formData.patientName,
@@ -204,7 +224,7 @@ export default function SchedulerPage() {
       locationId: "LOC001",
       locationName: "Main Clinic",
       appointmentDate: selectedDate.toISOString().split('T')[0],
-      startTime: selectedTime,
+      startTime: startTime24,
       duration: formData.duration || 30,
       status: "scheduled",
       appointmentType: formData.appointmentType || "office",
@@ -237,6 +257,20 @@ export default function SchedulerPage() {
     fetchAppointments();
   }, [selectedDate, selectedProvider]);
 
+  // Check if time slot has appointment (matching by hour)
+  const hasAppointment = (hour: number, minute: number): Appointment | null => {
+    const timeMinutes = hour * 60 + minute;
+    
+    return appointments.find(apt => {
+      const aptHour = getHourFromTime(apt.startTime);
+      const aptMinute = 0; // Assuming appointments start at :00
+      const aptTimeMinutes = aptHour * 60 + aptMinute;
+      
+      // Check if within 30-minute window
+      return Math.abs(aptTimeMinutes - timeMinutes) < 30;
+    }) || null;
+  };
+
   // Convert practices to dropdown options
   const practiceOptions: DropdownOption[] = [
     { label: "All Practices", value: "" },
@@ -252,24 +286,24 @@ export default function SchedulerPage() {
     }))
   ];
 
-  // Check if time slot has appointment
-  const hasAppointment = (time: string, period: "AM" | "PM"): Appointment | null => {
-    return appointments.find(apt => {
-      const aptHour = parseInt(apt.startTime.split(':')[0]);
-      const aptPeriod = aptHour >= 12 ? "PM" : "AM";
-      return apt.startTime.startsWith(time.split(':')[0]) && aptPeriod === period;
-    }) || null;
-  };
-
-  // Generate time slots
-  const hours = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
-  const minutes = [0, 30]; // 30-minute intervals
+  // Generate time slots (9 AM to 5 PM, 30-minute intervals)
+  const hours = [9, 10, 11, 12, 13, 14, 15, 16]; // 9 AM to 4 PM
+  const minutes = [0, 30];
   const periods: ("AM" | "PM")[] = ["AM", "PM"];
+
+  // Group hours by period
+  const getHoursByPeriod = (period: "AM" | "PM") => {
+    if (period === "AM") {
+      return hours.filter(h => h < 12).map(h => h === 0 ? 12 : h);
+    } else {
+      return hours.filter(h => h >= 12).map(h => h === 12 ? 12 : h - 12);
+    }
+  };
 
   return (
     <>
-     {isModalOpen && (    <Modal
-     
+     {isModalOpen&&( <Modal
+    
         close={() => {
           setIsModalOpen(false);
           setSelectedTime(null);
@@ -361,11 +395,14 @@ export default function SchedulerPage() {
                     <h3 className="font-bold text-lg mb-2 sticky top-0 bg-white py-2 border-b">
                       {period}
                     </h3>
-                    {hours.map((hour) => (
+                    {getHoursByPeriod(period).map((hour) => (
                       <div key={`${period}-${hour}`} className="mb-2">
                         {minutes.map((minute) => {
-                          const timeString = `${hour}:${minute.toString().padStart(2, "0")}`;
-                          const appointment = hasAppointment(timeString, period);
+                          const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+                          const appointment = hasAppointment(
+                            period === "AM" ? hour : hour + 12,
+                            minute
+                          );
                           const isBooked = !!appointment;
 
                           return (
@@ -403,9 +440,11 @@ export default function SchedulerPage() {
                                         : 'bg-red-500 text-white hover:bg-red-600'}`}
                                     onClick={() => deleteAppointment(appointment.appointmentId)}
                                   >
-                                    <div className="font-semibold">{appointment.patientName}</div>
-                                    <div className="text-xs opacity-90">
-                                      {appointment.providerName}
+                                    <div className="font-semibold truncate w-full">
+                                      {appointment.patientName}
+                                    </div>
+                                    <div className="text-xs opacity-90 truncate w-full">
+                                      {appointment.providerName?.split(' ').slice(0,2).join(' ')}
                                     </div>
                                     <div className="text-xs opacity-75 mt-1">
                                       {appointment.appointmentType}
