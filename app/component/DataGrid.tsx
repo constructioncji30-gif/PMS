@@ -10,7 +10,7 @@ import {
 
 type CommonDataGridProps<T> = {
   columns: any[];
-  data: T[];
+  data: any[];
   initialPageSize?: number;
   maxHeight?: string;
 };

@@ -81,7 +81,7 @@ export default function SchedulerPage() {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [selectedPractice, setSelectedPractice] = useState<string>("");
   const [selectedProvider, setSelectedProvider] = useState<string>("");
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState<any>(new Date());
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -92,6 +92,7 @@ export default function SchedulerPage() {
   const fetchPractices = async () => {
     try {
       const token = localStorage.getItem("accessToken");
+      
       const response = await fetch(`${API_BASE}/practices`, {
         headers: { "Authorization": `Bearer ${token}` }
       });

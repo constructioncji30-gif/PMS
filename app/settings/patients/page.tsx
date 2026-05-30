@@ -8,6 +8,7 @@ import CommonLink from "@/app/component/CommonLink";
 import Input from "@/app/component/Input";
 import { ColumnDef } from "@tanstack/react-table";
 import CommonDataGrid from "@/app/component/DataGrid";
+import CommonSearch from "@/app/component/CommonSearch";
 
 // Define patient type
 interface Patient {
@@ -133,26 +134,30 @@ export default function PatientGridPage() {
   }, [debouncedSearch]);
 
   return (
+    
     <CommonCard
       icon={<SearchCheck />}
-      button={
+      button={<>
+       <CommonSearch    placeholder={"Search by name, email, or phone..."}
+          value={searchTerm}
+          onChange={(e:any) => setSearchTerm(e.target.value)}
+          className="max-w-md"/>
         <CommonLink
           varient="primary"
           href="/settings/patients/create"
           title="Create Patient"
         />
+      
+      </>
+      
       }
+     
       title="Search Patient"
     >
       {/* Search Bar */}
       <div className="mb-4">
-        <Input
+        
          
-          placeholder="Search by name, email, or phone..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-md"
-        />
       </div>
 
       <CommonDataGrid 

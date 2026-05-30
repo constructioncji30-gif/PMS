@@ -1,8 +1,9 @@
 import React, { ReactNode } from "react";
 
 interface ModalProps {
-  close: (open: boolean) => void;
+  onClose: (open: boolean) => void;
   title: string;
+  isOpen:any;
   icon?:ReactNode
   children: ReactNode;
   size?: "sm" | "md" | "lg"; // Optional: control modal width
@@ -10,9 +11,10 @@ interface ModalProps {
 
 const Modal: React.FC<ModalProps> = ({
   icon,
-  close,
+  onClose,
   title,
   children,
+  isOpen,
   size = "md",
 }) => {
   // Map size to Tailwind width classes
@@ -22,12 +24,12 @@ const Modal: React.FC<ModalProps> = ({
     lg: "max-w-lg",
   };
 
-  return (
+  return (isOpen&&
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Overlay */}
       <div
         className="absolute inset-0 bg-black/30"
-        onClick={() => close(false)}
+        onClick={() => onClose(false)}
       />
 
       {/* Modal Content */}
@@ -41,7 +43,7 @@ const Modal: React.FC<ModalProps> = ({
         >
           <h3 className=" font-semibold text-sm"><i className="me-1">{icon}</i>{title}</h3>
           <button
-            onClick={() => close(false)}
+            onClick={() => onClose(false)}
             className="text-modalCloseHover h-5 w-5 flex justify-center bg-slate-300
             rounded-full items-center hover:text-modalCloseHover font-bold "
           >
