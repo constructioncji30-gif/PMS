@@ -10,12 +10,18 @@ import {
   FlaskConical,
   Camera,
   FileText,
-  Plus,
-  Edit,
-  Trash2,
   ChevronLeft,
   Printer,
   Download,
+  Calendar,
+  MapPin,
+  User,
+  Phone,
+  Mail,
+  Heart,
+  Thermometer,
+  Droplet,
+  Wind,
   TrendingUp,
   TrendingDown,
   Minus,
@@ -26,25 +32,21 @@ import {
 import CommonCard from "@/app/component/CommonCard";
 import CommonFormCard from "@/app/component/CommonFormCard";
 import Button from "@/app/component/Button";
-import Input from "@/app/component/Input";
-import Dropdown from "@/app/component/Dropdown";
-import Modal from "@/app/component/Modal";
-import TextArea from "@/app/component/TextAea";
-import CommonDataGrid from "@/app/component/DataGrid";
 
-// ==================== TYPES ====================
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
-interface Encounter {
-  encounterId: number;
-  encounterNumber: string;
-  encounterType: string;
-  encounterDate: string;
-  chiefComplaint: string;
-  visitReason: string;
-  status: string;
-  priority: string;
-  provider: { firstName: string; lastName: string; providerType: string };
-  location: { locationName: string; city: string };
+interface Patient {
+  patientId: number;
+  firstName: string;
+  lastName: string;
+  dob: string;
+  sex: string;
+  email: string;
+  cellPhone: string;
+  address1: string;
+  city: string;
+  state: string;
+  zip: string;
 }
 
 interface VitalSign {
@@ -55,7 +57,6 @@ interface VitalSign {
   bloodPressureSystolic: number | null;
   bloodPressureDiastolic: number | null;
   oxygenSaturation: number | null;
-  painLevel: number | null;
   measuredAt: string;
   measuredBy: string;
 }
@@ -67,7 +68,6 @@ interface Allergy {
   reaction: string;
   severity: string;
   status: string;
-  recordedDate: string;
 }
 
 interface Medication {
@@ -76,8 +76,6 @@ interface Medication {
   dosage: string;
   frequency: string;
   route: string;
-  prescribedDate: string;
-  prescribedBy: string;
   status: string;
 }
 
@@ -86,33 +84,23 @@ interface Diagnosis {
   diagnosisName: string;
   icdCode: string;
   diagnosisType: string;
-  diagnosedDate: string;
   status: string;
 }
 
 interface Lab {
   labId: number;
   labName: string;
-  labCategory: string;
-  orderedDate: string;
-  resultDate: string;
   resultValue: string;
   referenceRange: string;
-  unit: string;
-  status: string;
   isAbnormal: boolean;
-  interpretation: string;
+  status: string;
 }
 
 interface Imaging {
   imagingId: number;
   imagingType: string;
   bodyPart: string;
-  orderedDate: string;
-  performedDate: string;
-  resultDate: string;
   findings: string;
-  impression: string;
   status: string;
 }
 
@@ -120,106 +108,27 @@ interface ClinicalNote {
   noteId: number;
   noteType: string;
   title: string;
-  subjective: string;
-  objective: string;
-  assessment: string;
-  plan: string;
   authoredDate: string;
   authoredBy: string;
-  status: string;
-  isSigned: boolean;
 }
 
-// ==================== DROPDOWN OPTIONS ====================
-
-const allergyTypeOptions = [
-  { label: "Drug", value: "Drug" },
-  { label: "Food", value: "Food" },
-  { label: "Environmental", value: "Environmental" },
-  { label: "Latex", value: "Latex" },
-  { label: "Other", value: "Other" }
-];
-
-const severityOptions = [
-  { label: "Mild", value: "Mild" },
-  { label: "Moderate", value: "Moderate" },
-  { label: "Severe", value: "Severe" },
-  { label: "Life-threatening", value: "Life-threatening" }
-];
-
-const medicationRouteOptions = [
-  { label: "Oral", value: "Oral" },
-  { label: "Intravenous", value: "Intravenous" },
-  { label: "Intramuscular", value: "Intramuscular" },
-  { label: "Subcutaneous", value: "Subcutaneous" },
-  { label: "Topical", value: "Topical" },
-  { label: "Inhalation", value: "Inhalation" }
-];
-
-const medicationFrequencyOptions = [
-  { label: "Once daily", value: "Once daily" },
-  { label: "Twice daily", value: "Twice daily" },
-  { label: "Three times daily", value: "Three times daily" },
-  { label: "Four times daily", value: "Four times daily" },
-  { label: "Every 6 hours", value: "Every 6 hours" },
-  { label: "Every 8 hours", value: "Every 8 hours" },
-  { label: "As needed", value: "As needed" }
-];
-
-const diagnosisTypeOptions = [
-  { label: "Primary", value: "Primary" },
-  { label: "Secondary", value: "Secondary" },
-  { label: "Chronic", value: "Chronic" },
-  { label: "Acute", value: "Acute" }
-];
-
-const labCategoryOptions = [
-  { label: "Blood", value: "Blood" },
-  { label: "Urine", value: "Urine" },
-  { label: "Pathology", value: "Pathology" },
-  { label: "Microbiology", value: "Microbiology" },
-  { label: "Chemistry", value: "Chemistry" },
-  { label: "Hematology", value: "Hematology" }
-];
-
-const imagingTypeOptions = [
-  { label: "X-Ray", value: "X-Ray" },
-  { label: "MRI", value: "MRI" },
-  { label: "CT Scan", value: "CT Scan" },
-  { label: "Ultrasound", value: "Ultrasound" },
-  { label: "Mammogram", value: "Mammogram" },
-  { label: "PET Scan", value: "PET Scan" }
-];
-
-const noteTypeOptions = [
-  { label: "Progress Note", value: "Progress Note" },
-  { label: "SOAP Note", value: "SOAP Note" },
-  { label: "Discharge Summary", value: "Discharge Summary" },
-  { label: "Consultation Note", value: "Consultation Note" },
-  { label: "Follow-up Note", value: "Follow-up Note" }
-];
-
-const statusOptions = [
-  { label: "Scheduled", value: "Scheduled" },
-  { label: "In Progress", value: "In Progress" },
-  { label: "Completed", value: "Completed" },
-  { label: "Cancelled", value: "Cancelled" }
-];
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
-
-// ==================== HELPER FUNCTIONS ====================
+interface Encounter {
+  encounterId: number;
+  encounterNumber: string;
+  encounterType: string;
+  encounterDate: string;
+  chiefComplaint: string;
+  status: string;
+}
 
 const getStatusBadge = (status: string) => {
   const colors: Record<string, string> = {
     Active: "bg-green-100 text-green-800",
     Inactive: "bg-gray-100 text-gray-800",
     Scheduled: "bg-blue-100 text-blue-800",
-    "In Progress": "bg-yellow-100 text-yellow-800",
     Completed: "bg-green-100 text-green-800",
     Cancelled: "bg-red-100 text-red-800",
-    Pending: "bg-yellow-100 text-yellow-800",
-    Resolved: "bg-green-100 text-green-800"
+    Pending: "bg-yellow-100 text-yellow-800"
   };
   return colors[status] || "bg-gray-100 text-gray-800";
 };
@@ -234,302 +143,127 @@ const getSeverityBadge = (severity: string) => {
   return colors[severity] || "bg-gray-100";
 };
 
-// ==================== MAIN COMPONENT ====================
+const getTrendIcon = (value: number, normalRange: { min: number; max: number }) => {
+  if (!value) return null;
+  if (value < normalRange.min) return <TrendingDown size={14} className="text-blue-500" />;
+  if (value > normalRange.max) return <TrendingUp size={14} className="text-red-500" />;
+  return <Minus size={14} className="text-green-500" />;
+};
 
-export default function EncounterClinicalDashboard() {
+export default function PatientClinicalView() {
   const params = useParams();
   const router = useRouter();
-  const encounterId = params.encounterId as string;
+  const patientId = params.patientId as string;
 
-  // State
-  const [encounter, setEncounter] = useState<Encounter | null>(null);
-  const [vitals, setVitals] = useState<VitalSign[]>([]);
+  const [patient, setPatient] = useState<Patient | null>(null);
+  const [latestVitals, setLatestVitals] = useState<VitalSign | null>(null);
   const [allergies, setAllergies] = useState<Allergy[]>([]);
   const [medications, setMedications] = useState<Medication[]>([]);
   const [diagnoses, setDiagnoses] = useState<Diagnosis[]>([]);
-  const [labs, setLabs] = useState<Lab[]>([]);
-  const [imaging, setImaging] = useState<Imaging[]>([]);
-  const [notes, setNotes] = useState<ClinicalNote[]>([]);
+  const [recentLabs, setRecentLabs] = useState<Lab[]>([]);
+  const [recentImaging, setRecentImaging] = useState<Imaging[]>([]);
+  const [recentNotes, setRecentNotes] = useState<ClinicalNote[]>([]);
+  const [recentEncounters, setRecentEncounters] = useState<Encounter[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeSection, setActiveSection] = useState("vitals");
 
-  // Modal states
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalType, setModalType] = useState("");
-  const [editingItem, setEditingItem] = useState<any>(null);
-  const [formData, setFormData] = useState<any>({});
+  useEffect(() => {
+    fetchAllClinicalData();
+  }, [patientId]);
 
-  // Fetch all data
-  const fetchEncounterData = async () => {
+  const fetchAllClinicalData = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("accessToken");
-      const response = await fetch(`${API_BASE}/encounters/${encounterId}`, {
+      
+      // Fetch patient data
+      const patientRes = await fetch(`${API_BASE}/patients/${patientId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      const data = await response.json();
-      if (data.success) {
-        setEncounter(data.encounter);
-        setVitals(data.encounter.vitals || []);
-        setAllergies(data.encounter.allergies || []);
-        setMedications(data.encounter.medications || []);
-        setDiagnoses(data.encounter.diagnoses || []);
-        setLabs(data.encounter.labs || []);
-        setImaging(data.encounter.imaging || []);
-        setNotes(data.encounter.notes || []);
+      const patientData = await patientRes.json();
+      if (patientData.success) {
+        setPatient(patientData.patient);
       }
+
+      // Fetch latest vitals
+      const vitalsRes = await fetch(`${API_BASE}/vitals/patient/${patientId}/latest`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const vitalsData = await vitalsRes.json();
+      if (vitalsData.success && vitalsData.vital) {
+        setLatestVitals(vitalsData.vital);
+      }
+
+      // Fetch allergies
+      const allergiesRes = await fetch(`${API_BASE}/clinical/allergies/${patientId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const allergiesData = await allergiesRes.json();
+      if (allergiesData.success) {
+        setAllergies(allergiesData.allergies || []);
+      }
+
+      // Fetch medications
+      const medsRes = await fetch(`${API_BASE}/clinical/medications/${patientId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const medsData = await medsRes.json();
+      if (medsData.success) {
+        setMedications(medsData.medications || []);
+      }
+
+      // Fetch diagnoses
+      const diagRes = await fetch(`${API_BASE}/clinical/diagnoses/${patientId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const diagData = await diagRes.json();
+      if (diagData.success) {
+        setDiagnoses(diagData.activeDiagnoses || []);
+      }
+
+      // Fetch recent labs
+      const labsRes = await fetch(`${API_BASE}/clinical/labs/${patientId}?limit=5`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const labsData = await labsRes.json();
+      if (labsData.success) {
+        setRecentLabs(labsData.labs || []);
+      }
+
+      // Fetch recent imaging
+      const imagingRes = await fetch(`${API_BASE}/clinical/imaging/${patientId}?limit=5`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const imagingData = await imagingRes.json();
+      if (imagingData.success) {
+        setRecentImaging(imagingData.imaging || []);
+      }
+
+      // Fetch recent notes
+      const notesRes = await fetch(`${API_BASE}/clinical/notes/${patientId}?limit=5`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const notesData = await notesRes.json();
+      if (notesData.success) {
+        setRecentNotes(notesData.notes || []);
+      }
+
+      // Fetch recent encounters
+      const encRes = await fetch(`${API_BASE}/encounters/patient/${patientId}?limit=5`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const encData = await encRes.json();
+      if (encData.success) {
+        setRecentEncounters(encData.encounters || []);
+      }
+
     } catch (error) {
-      console.error("Error fetching encounter data:", error);
+      console.error("Error fetching clinical data:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (encounterId) {
-      fetchEncounterData();
-    }
-  }, [encounterId]);
-
-  // Add/Edit/Delete handlers
-  const handleAdd = (type: string) => {
-    setModalType(type);
-    setEditingItem(null);
-    setFormData({});
-    setIsModalOpen(true);
-  };
-
-  const handleEdit = (type: string, item: any) => {
-    setModalType(type);
-    setEditingItem(item);
-    setFormData(item);
-    setIsModalOpen(true);
-  };
-
-  const handleDelete = async (type: string, id: number) => {
-    if (!confirm(`Are you sure you want to delete this ${type}?`)) return;
-    try {
-      const token = localStorage.getItem("accessToken");
-      const response = await fetch(`${API_BASE}/clinical/${type}/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await response.json();
-      if (data.success) {
-        fetchEncounterData();
-        alert(`${type} deleted successfully`);
-      }
-    } catch (error) {
-      console.error("Error deleting:", error);
-    }
-  };
-
-  const handleSubmit = async () => {
-    try {
-      const token = localStorage.getItem("accessToken");
-      const itemId = editingItem ? editingItem[`${modalType}Id`] : null;
-      const url = editingItem
-        ? `${API_BASE}/clinical/${modalType}/${itemId}`
-        : `${API_BASE}/clinical/${modalType}`;
-      const method = editingItem ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ ...formData, encounterId: parseInt(encounterId) })
-      });
-      const data = await response.json();
-      if (data.success) {
-        fetchEncounterData();
-        setIsModalOpen(false);
-        alert(`${modalType} ${editingItem ? "updated" : "added"} successfully`);
-      }
-    } catch (error) {
-      console.error("Error saving:", error);
-    }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
-
-  const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value === "" ? null : parseFloat(value) });
-  };
-
-  const handleDropdownChange = (name: any, value: any) => {
-    setFormData({ ...formData, [name]: value });
-  };
-
-  // Column definitions
-  const vitalColumns = [
-    { accessorKey: "measuredAt", header: "Date/Time", cell: (row: any) => new Date(row.measuredAt).toLocaleString() },
-    { accessorKey: "temperature", header: "Temp (°C)", cell: (row: any) => row.temperature ? `${row.temperature}°C` : "-" },
-    { accessorKey: "heartRate", header: "HR (bpm)", cell: (row: any) => row.heartRate || "-" },
-    { accessorKey: "bloodPressure", header: "BP (mmHg)", cell: (row: any) => row.bloodPressureSystolic ? `${row.bloodPressureSystolic}/${row.bloodPressureDiastolic}` : "-" },
-    { accessorKey: "oxygenSaturation", header: "SpO2 (%)", cell: (row: any) => row.oxygenSaturation ? `${row.oxygenSaturation}%` : "-" },
-    { accessorKey: "measuredBy", header: "Taken By" }
-  ];
-
-  const allergyColumns = [
-    { accessorKey: "allergen", header: "Allergen" },
-    { accessorKey: "allergyType", header: "Type" },
-    { accessorKey: "reaction", header: "Reaction" },
-    { accessorKey: "severity", header: "Severity", cell: (row: any) => <span className={`px-2 py-1 rounded-full text-xs ${getSeverityBadge(row.severity)}`}>{row.severity}</span> },
-    { accessorKey: "status", header: "Status", cell: (row: any) => <span className={`px-2 py-1 rounded-full text-xs ${getStatusBadge(row.status)}`}>{row.status}</span> }
-  ];
-
-  const medicationColumns = [
-    { accessorKey: "medicationName", header: "Medication" },
-    { accessorKey: "dosage", header: "Dosage" },
-    { accessorKey: "frequency", header: "Frequency" },
-    { accessorKey: "route", header: "Route" },
-    { accessorKey: "status", header: "Status", cell: (row: any) => <span className={`px-2 py-1 rounded-full text-xs ${getStatusBadge(row.status)}`}>{row.status}</span> }
-  ];
-
-  const diagnosisColumns = [
-    { accessorKey: "diagnosisName", header: "Diagnosis" },
-    { accessorKey: "icdCode", header: "ICD-10" },
-    { accessorKey: "diagnosisType", header: "Type" },
-    { accessorKey: "status", header: "Status", cell: (row: any) => <span className={`px-2 py-1 rounded-full text-xs ${getStatusBadge(row.status)}`}>{row.status}</span> }
-  ];
-
-  const labColumns = [
-    { accessorKey: "labName", header: "Lab Test" },
-    { accessorKey: "labCategory", header: "Category" },
-    { accessorKey: "resultValue", header: "Result", cell: (row: any) => <span className={row.isAbnormal ? "text-red-600 font-medium" : ""}>{row.resultValue || "Pending"}</span> },
-    { accessorKey: "status", header: "Status", cell: (row: any) => <span className={`px-2 py-1 rounded-full text-xs ${getStatusBadge(row.status)}`}>{row.status}</span> }
-  ];
-
-  const imagingColumns = [
-    { accessorKey: "imagingType", header: "Imaging Type" },
-    { accessorKey: "bodyPart", header: "Body Part" },
-    { accessorKey: "findings", header: "Findings", cell: (row: any) => row.findings?.substring(0, 50) || "-" },
-    { accessorKey: "status", header: "Status", cell: (row: any) => <span className={`px-2 py-1 rounded-full text-xs ${getStatusBadge(row.status)}`}>{row.status}</span> }
-  ];
-
-  const noteColumns = [
-    { accessorKey: "noteType", header: "Type" },
-    { accessorKey: "title", header: "Title" },
-    { accessorKey: "authoredDate", header: "Date", cell: (row: any) => new Date(row.authoredDate).toLocaleString() },
-    { accessorKey: "authoredBy", header: "Author" },
-    { accessorKey: "isSigned", header: "Signed", cell: (row: any) => row.isSigned ? <CheckCircle size={16} className="text-green-500" /> : <XCircle size={16} className="text-gray-400" /> }
-  ];
-
-  const sections = [
-    { id: "vitals", label: "Vital Signs", icon: <Activity size={18} />, data: vitals, columns: vitalColumns, count: vitals.length },
-    { id: "allergies", label: "Allergies", icon: <AlertCircle size={18} />, data: allergies, columns: allergyColumns, count: allergies.length },
-    { id: "medications", label: "Medications", icon: <Pill size={18} />, data: medications, columns: medicationColumns, count: medications.length },
-    { id: "diagnoses", label: "Diagnoses", icon: <Stethoscope size={18} />, data: diagnoses, columns: diagnosisColumns, count: diagnoses.length },
-    { id: "labs", label: "Labs", icon: <FlaskConical size={18} />, data: labs, columns: labColumns, count: labs.length },
-    { id: "imaging", label: "Imaging", icon: <Camera size={18} />, data: imaging, columns: imagingColumns, count: imaging.length },
-    { id: "notes", label: "Clinical Notes", icon: <FileText size={18} />, data: notes, columns: noteColumns, count: notes.length }
-  ];
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-gray-500">Loading encounter data...</div>
-      </div>
-    );
-  }
-
-  // Render modal content based on type
-  const renderModalContent = () => {
-    switch (modalType) {
-      case "vitals":
-        return (
-          <CommonFormCard cols={2}>
-            <Input label="Temperature (°C)" name="temperature" type="number" step="0.1" value={formData.temperature || ""} onChange={handleNumberChange} />
-            <Input label="Heart Rate (bpm)" name="heartRate" type="number" value={formData.heartRate || ""} onChange={handleNumberChange} />
-            <Input label="Blood Pressure Systolic" name="bloodPressureSystolic" type="number" value={formData.bloodPressureSystolic || ""} onChange={handleNumberChange} />
-            <Input label="Blood Pressure Diastolic" name="bloodPressureDiastolic" type="number" value={formData.bloodPressureDiastolic || ""} onChange={handleNumberChange} />
-            <Input label="Oxygen Saturation (%)" name="oxygenSaturation" type="number" value={formData.oxygenSaturation || ""} onChange={handleNumberChange} />
-            <Input label="Measured By" name="measuredBy" value={formData.measuredBy || ""} onChange={handleInputChange} />
-          </CommonFormCard>
-        );
-      case "allergies":
-        return (
-          <CommonFormCard cols={2}>
-            <Input label="Allergen" name="allergen" value={formData.allergen || ""} onChange={handleInputChange} required />
-            <Dropdown label="Allergy Type" options={allergyTypeOptions} value={formData.allergyType} onChange={(val) => handleDropdownChange("allergyType", val)} />
-            <Input label="Reaction" name="reaction" value={formData.reaction || ""} onChange={handleInputChange} />
-            <Dropdown label="Severity" options={severityOptions} value={formData.severity} onChange={(val) => handleDropdownChange("severity", val)} />
-            <div className="col-span-2">
-              <TextArea label="Notes" name="notes" value={formData.notes || ""} onChange={handleInputChange} rows={2} />
-            </div>
-          </CommonFormCard>
-        );
-      case "medications":
-        return (
-          <CommonFormCard cols={2}>
-            <Input label="Medication Name" name="medicationName" value={formData.medicationName || ""} onChange={handleInputChange} required />
-            <Input label="Dosage" name="dosage" value={formData.dosage || ""} onChange={handleInputChange} />
-            <Dropdown label="Frequency" options={medicationFrequencyOptions} value={formData.frequency} onChange={(val) => handleDropdownChange("frequency", val)} />
-            <Dropdown label="Route" options={medicationRouteOptions} value={formData.route} onChange={(val) => handleDropdownChange("route", val)} />
-            <Input label="Prescribed By" name="prescribedBy" value={formData.prescribedBy || ""} onChange={handleInputChange} />
-            <Input label="Instructions" name="instructions" value={formData.instructions || ""} onChange={handleInputChange} />
-          </CommonFormCard>
-        );
-      case "diagnoses":
-        return (
-          <CommonFormCard cols={2}>
-            <Input label="Diagnosis Name" name="diagnosisName" value={formData.diagnosisName || ""} onChange={handleInputChange} required />
-            <Input label="ICD-10 Code" name="icdCode" value={formData.icdCode || ""} onChange={handleInputChange} />
-            <Dropdown label="Diagnosis Type" options={diagnosisTypeOptions} value={formData.diagnosisType} onChange={(val) => handleDropdownChange("diagnosisType", val)} />
-            <Input label="Diagnosed By" name="diagnosedBy" value={formData.diagnosedBy || ""} onChange={handleInputChange} />
-          </CommonFormCard>
-        );
-      case "labs":
-        return (
-          <CommonFormCard cols={2}>
-            <Input label="Lab Test Name" name="labName" value={formData.labName || ""} onChange={handleInputChange} required />
-            <Dropdown label="Lab Category" options={labCategoryOptions} value={formData.labCategory} onChange={(val) => handleDropdownChange("labCategory", val)} />
-            <Input label="Ordered By" name="orderedBy" value={formData.orderedBy || ""} onChange={handleInputChange} />
-            <div className="col-span-2">
-              <TextArea label="Notes" name="notes" value={formData.notes || ""} onChange={handleInputChange} rows={2} />
-            </div>
-          </CommonFormCard>
-        );
-      case "imaging":
-        return (
-          <CommonFormCard cols={2}>
-            <Dropdown label="Imaging Type" options={imagingTypeOptions} value={formData.imagingType} onChange={(val) => handleDropdownChange("imagingType", val)} />
-            <Input label="Body Part" name="bodyPart" value={formData.bodyPart || ""} onChange={handleInputChange} />
-            <Input label="Ordered By" name="orderedBy" value={formData.orderedBy || ""} onChange={handleInputChange} />
-            <div className="col-span-2">
-              <TextArea label="Clinical Indication" name="clinicalIndication" value={formData.clinicalIndication || ""} onChange={handleInputChange} rows={2} />
-            </div>
-          </CommonFormCard>
-        );
-      case "notes":
-        return (
-          <CommonFormCard cols={2}>
-            <Dropdown label="Note Type" options={noteTypeOptions} value={formData.noteType} onChange={(val) => handleDropdownChange("noteType", val)} />
-            <Input label="Title" name="title" value={formData.title || ""} onChange={handleInputChange} />
-            <div className="col-span-2">
-              <TextArea label="Subjective" name="subjective" value={formData.subjective || ""} onChange={handleInputChange} rows={3} placeholder="Patient's description" />
-            </div>
-            <div className="col-span-2">
-              <TextArea label="Objective" name="objective" value={formData.objective || ""} onChange={handleInputChange} rows={3} placeholder="Physical exam findings" />
-            </div>
-            <div className="col-span-2">
-              <TextArea label="Assessment" name="assessment" value={formData.assessment || ""} onChange={handleInputChange} rows={3} placeholder="Diagnosis, assessment" />
-            </div>
-            <div className="col-span-2">
-              <TextArea label="Plan" name="plan" value={formData.plan || ""} onChange={handleInputChange} rows={3} placeholder="Treatment plan" />
-            </div>
-          </CommonFormCard>
-        );
-      default:
-        return null;
-    }
-  };
+  
 
   return (
     <div className="space-y-4">
@@ -538,100 +272,300 @@ export default function EncounterClinicalDashboard() {
         <div className="flex justify-between items-start">
           <div>
             <button onClick={() => router.back()} className="flex items-center gap-1 text-blue-600 hover:text-blue-800 mb-2">
-              <ChevronLeft size={16} /> Back to Encounters
+              <ChevronLeft size={16} /> Back to Patient List
             </button>
-            <h1 className="text-2xl font-bold">Encounter Clinical Dashboard</h1>
-            <div className="flex gap-4 mt-2 text-sm text-gray-600">
-              <span>#{encounter?.encounterNumber}</span>
-              <span>{encounter?.encounterType}</span>
-              <span>{encounter?.encounterDate ? new Date(encounter.encounterDate).toLocaleDateString() : ""}</span>
-              <span className={`px-2 py-0.5 rounded-full text-xs ${getStatusBadge(encounter?.status || "")}`}>{encounter?.status}</span>
-            </div>
-            {encounter?.chiefComplaint && (
-              <p className="mt-2 text-gray-700"><span className="font-medium">Chief Complaint:</span> {encounter.chiefComplaint}</p>
-            )}
+            <h1 className="text-2xl font-bold">Clinical Summary</h1>
+            <p className="text-gray-500">Complete health record for {patient?.firstName} {patient?.lastName}</p>
           </div>
           <div className="flex gap-2">
-            <Button varient="secondary" ><Printer size={14} className="mr-1" /> Print</Button>
-            <Button varient="secondary" ><Download size={14} className="mr-1" /> Export</Button>
+            <Button varient="secondary" size="sm"><Printer size={14} className="mr-1" /> Print</Button>
+            <Button varient="secondary" size="sm"><Download size={14} className="mr-1" /> Export PDF</Button>
           </div>
         </div>
       </div>
 
-      {/* Section Navigation Tabs */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="flex overflow-x-auto border-b">
-          {sections.map((section) => (
-            <button
-              key={section.id}
-              onClick={() => setActiveSection(section.id)}
-              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap
-                ${activeSection === section.id ? "border-blue-500 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
-            >
-              {section.icon}
-              {section.label}
-              <span className={`ml-1 px-2 py-0.5 rounded-full text-xs ${activeSection === section.id ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-600"}`}>
-                {section.count}
-              </span>
-            </button>
-          ))}
+      {/* Patient Demographic Card */}
+      <CommonCard title="Patient Information" icon={<User size={18} />}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="flex items-center gap-2">
+            <User size={16} className="text-gray-400" />
+            <div>
+              <p className="text-xs text-gray-500">Full Name</p>
+              <p className="font-medium">{patient?.firstName} {patient?.lastName}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Calendar size={16} className="text-gray-400" />
+            <div>
+              <p className="text-xs text-gray-500">Date of Birth</p>
+              <p className="font-medium">{patient?.dob ? new Date(patient.dob).toLocaleDateString() : "-"}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <User size={16} className="text-gray-400" />
+            <div>
+              <p className="text-xs text-gray-500">Gender</p>
+              <p className="font-medium">{patient?.sex || "-"}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Phone size={16} className="text-gray-400" />
+            <div>
+              <p className="text-xs text-gray-500">Phone</p>
+              <p className="font-medium">{patient?.cellPhone || "-"}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Mail size={16} className="text-gray-400" />
+            <div>
+              <p className="text-xs text-gray-500">Email</p>
+              <p className="font-medium">{patient?.email || "-"}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <MapPin size={16} className="text-gray-400" />
+            <div>
+              <p className="text-xs text-gray-500">Address</p>
+              <p className="font-medium">{patient?.address1 || "-"}, {patient?.city || ""}</p>
+            </div>
+          </div>
         </div>
+      </CommonCard>
 
-        {/* Dynamic Section Content */}
-        <div className="p-4">
-          {sections.map((section) => (
-            activeSection === section.id && (
-              <CommonCard
-                key={section.id}
-                title={section.label}
-                icon={section.icon}
-                button={
-                  <Button varient="primary"  onClick={() => handleAdd(section.id)}>
-                    <Plus size={14} className="mr-1" /> Add {section.label.slice(0, -1)}
-                  </Button>
-                }
-              >
-                <CommonDataGrid
-                  columns={section.columns}
-                  data={section.data}
-                  initialPageSize={10}
-                  maxHeight="400px"
-                  actions={(row: any) => (
-                    <div className="flex gap-2">
-                      <button onClick={() => handleEdit(section.id, row)} className="p-1 text-blue-600 hover:bg-blue-50 rounded" title="Edit">
-                        <Edit size={16} />
-                      </button>
-                      <button onClick={() => handleDelete(section.id, row[`${section.id.slice(0, -1)}Id`])} className="p-1 text-red-600 hover:bg-red-50 rounded" title="Delete">
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  )}
-                />
-                {section.data.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                    No {section.label.toLowerCase()} recorded for this encounter.
-                    <button onClick={() => handleAdd(section.id)} className="ml-2 text-blue-600 hover:underline">Add now</button>
-                  </div>
-                )}
-              </CommonCard>
-            )
-          ))}
+      {/* Latest Vitals Card */}
+      <CommonCard title="Latest Vital Signs" icon={<Heart size={18} />}>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="text-center p-3 bg-blue-50 rounded-lg">
+            <Thermometer size={20} className="mx-auto text-blue-500 mb-1" />
+            <p className="text-xs text-gray-500">Temperature</p>
+            <p className="text-lg font-semibold">{latestVitals?.temperature ? `${latestVitals.temperature}°C` : "-"}</p>
+            {latestVitals?.temperature && getTrendIcon(latestVitals.temperature, { min: 36.1, max: 37.2 })}
+          </div>
+          <div className="text-center p-3 bg-red-50 rounded-lg">
+            <Heart size={20} className="mx-auto text-red-500 mb-1" />
+            <p className="text-xs text-gray-500">Heart Rate</p>
+            <p className="text-lg font-semibold">{latestVitals?.heartRate || "-"} bpm</p>
+            {latestVitals?.heartRate && getTrendIcon(latestVitals.heartRate, { min: 60, max: 100 })}
+          </div>
+          <div className="text-center p-3 bg-green-50 rounded-lg">
+            <Activity size={20} className="mx-auto text-green-500 mb-1" />
+            <p className="text-xs text-gray-500">Blood Pressure</p>
+            <p className="text-lg font-semibold">
+              {latestVitals?.bloodPressureSystolic ? `${latestVitals.bloodPressureSystolic}/${latestVitals.bloodPressureDiastolic}` : "-"}
+            </p>
+          </div>
+          <div className="text-center p-3 bg-purple-50 rounded-lg">
+            <Wind size={20} className="mx-auto text-purple-500 mb-1" />
+            <p className="text-xs text-gray-500">Respiratory Rate</p>
+            <p className="text-lg font-semibold">{latestVitals?.respiratoryRate || "-"} /min</p>
+          </div>
+          <div className="text-center p-3 bg-indigo-50 rounded-lg">
+            <Droplet size={20} className="mx-auto text-indigo-500 mb-1" />
+            <p className="text-xs text-gray-500">Oxygen Saturation</p>
+            <p className="text-lg font-semibold">{latestVitals?.oxygenSaturation ? `${latestVitals.oxygenSaturation}%` : "-"}</p>
+          </div>
+          <div className="text-center p-3 bg-gray-50 rounded-lg">
+            <Calendar size={20} className="mx-auto text-gray-500 mb-1" />
+            <p className="text-xs text-gray-500">Measured At</p>
+            <p className="text-sm font-medium">{latestVitals?.measuredAt ? new Date(latestVitals.measuredAt).toLocaleDateString() : "-"}</p>
+          </div>
         </div>
+      </CommonCard>
+
+      {/* Two Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        
+        {/* Allergies Card */}
+        <CommonCard title="Allergies" icon={<AlertCircle size={18} />}>
+          {allergies.length === 0 ? (
+            <p className="text-gray-500 text-center py-4">No allergies recorded</p>
+          ) : (
+            <div className="space-y-3">
+              {allergies.map((allergy) => (
+                <div key={allergy.allergyId} className="border-b pb-2">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-medium">{allergy.allergen}</p>
+                      <p className="text-sm text-gray-500">{allergy.reaction}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className={`px-2 py-1 rounded-full text-xs ${getSeverityBadge(allergy.severity)}`}>
+                        {allergy.severity}
+                      </span>
+                      <span className={`px-2 py-1 rounded-full text-xs ${getStatusBadge(allergy.status)}`}>
+                        {allergy.status}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">Type: {allergy.allergyType}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </CommonCard>
+
+        {/* Medications Card */}
+        <CommonCard title="Active Medications" icon={<Pill size={18} />}>
+          {medications.length === 0 ? (
+            <p className="text-gray-500 text-center py-4">No medications prescribed</p>
+          ) : (
+            <div className="space-y-3">
+              {medications.map((med) => (
+                <div key={med.medicationId} className="border-b pb-2">
+                  <div className="flex justify-between">
+                    <p className="font-medium">{med.medicationName}</p>
+                    <span className={`px-2 py-1 rounded-full text-xs ${getStatusBadge(med.status)}`}>
+                      {med.status}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-500">{med.dosage} - {med.frequency} - {med.route}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </CommonCard>
+
+        {/* Diagnoses Card */}
+        <CommonCard title="Active Diagnoses" icon={<Stethoscope size={18} />}>
+          {diagnoses.length === 0 ? (
+            <p className="text-gray-500 text-center py-4">No diagnoses recorded</p>
+          ) : (
+            <div className="space-y-3">
+              {diagnoses.map((diag) => (
+                <div key={diag.diagnosisId} className="border-b pb-2">
+                  <div className="flex justify-between">
+                    <div>
+                      <p className="font-medium">{diag.diagnosisName}</p>
+                      <p className="text-xs text-gray-500">ICD-10: {diag.icdCode}</p>
+                    </div>
+                    <span className={`px-2 py-1 rounded-full text-xs ${getStatusBadge(diag.status)}`}>
+                      {diag.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-400">Type: {diag.diagnosisType}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </CommonCard>
+
+        {/* Recent Labs Card */}
+        <CommonCard title="Recent Labs" icon={<FlaskConical size={18} />}>
+          {recentLabs.length === 0 ? (
+            <p className="text-gray-500 text-center py-4">No lab results</p>
+          ) : (
+            <div className="space-y-3">
+              {recentLabs.map((lab) => (
+                <div key={lab.labId} className="border-b pb-2">
+                  <div className="flex justify-between">
+                    <p className="font-medium">{lab.labName}</p>
+                    <span className={`px-2 py-1 rounded-full text-xs ${getStatusBadge(lab.status)}`}>
+                      {lab.status}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center mt-1">
+                    <p className={`text-sm ${lab.isAbnormal ? 'text-red-600 font-medium' : 'text-gray-600'}`}>
+                      Result: {lab.resultValue || "Pending"} {lab.referenceRange ? `(Ref: ${lab.referenceRange})` : ""}
+                    </p>
+                    {lab.isAbnormal && <span className="text-xs text-red-500">Abnormal</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CommonCard>
+
+        {/* Recent Imaging Card */}
+        <CommonCard title="Recent Imaging" icon={<Camera size={18} />}>
+          {recentImaging.length === 0 ? (
+            <p className="text-gray-500 text-center py-4">No imaging studies</p>
+          ) : (
+            <div className="space-y-3">
+              {recentImaging.map((img) => (
+                <div key={img.imagingId} className="border-b pb-2">
+                  <div className="flex justify-between">
+                    <div>
+                      <p className="font-medium">{img.imagingType}</p>
+                      <p className="text-xs text-gray-500">Body Part: {img.bodyPart}</p>
+                    </div>
+                    <span className={`px-2 py-1 rounded-full text-xs ${getStatusBadge(img.status)}`}>
+                      {img.status}
+                    </span>
+                  </div>
+                  {img.findings && <p className="text-sm text-gray-600 mt-1 line-clamp-2">{img.findings}</p>}
+                </div>
+              ))}
+            </div>
+          )}
+        </CommonCard>
+
+        {/* Recent Notes Card */}
+        <CommonCard title="Recent Clinical Notes" icon={<FileText size={18} />}>
+          {recentNotes.length === 0 ? (
+            <p className="text-gray-500 text-center py-4">No clinical notes</p>
+          ) : (
+            <div className="space-y-3">
+              {recentNotes.map((note) => (
+                <div key={note.noteId} className="border-b pb-2">
+                  <div className="flex justify-between">
+                    <p className="font-medium">{note.title || note.noteType}</p>
+                    {note.isSigned && <CheckCircle size={14} className="text-green-500" />}
+                  </div>
+                  <p className="text-xs text-gray-500">By {note.authoredBy} on {new Date(note.authoredDate).toLocaleDateString()}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </CommonCard>
+
+        {/* Recent Encounters Card */}
+        <CommonCard title="Recent Encounters" icon={<Calendar size={18} />}>
+          {recentEncounters.length === 0 ? (
+            <p className="text-gray-500 text-center py-4">No encounters</p>
+          ) : (
+            <div className="space-y-3">
+              {recentEncounters.map((enc) => (
+                <div key={enc.encounterId} className="border-b pb-2">
+                  <div className="flex justify-between">
+                    <div>
+                      <p className="font-medium">{enc.encounterType}</p>
+                      <p className="text-xs text-gray-500">#{enc.encounterNumber}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className={`px-2 py-1 rounded-full text-xs ${getStatusBadge(enc.status)}`}>
+                        {enc.status}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-1">{enc.chiefComplaint || "No chief complaint"}</p>
+                  <p className="text-xs text-gray-400 mt-1">{new Date(enc.encounterDate).toLocaleDateString()}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </CommonCard>
       </div>
 
-      
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={`${editingItem ? "Edit" : "Add"} ${modalType.slice(0, -1)}`}
-        size="lg"
-      >
-        {renderModalContent()}
-        <div className="flex justify-end gap-3 mt-4 pt-4 border-t">
-          <Button varient="secondary" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-          <Button varient="primary" onClick={handleSubmit}>{editingItem ? "Update" : "Add"}</Button>
-        </div>
-      </Modal>
+      {/* Print Styles */}
+      <style jsx global>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          .print-area, .print-area * {
+            visibility: visible;
+          }
+          .print-area {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+          }
+          button {
+            display: none;
+          }
+        }
+      `}</style>
     </div>
   );
 }
