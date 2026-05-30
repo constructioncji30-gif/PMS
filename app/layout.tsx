@@ -39,8 +39,8 @@ export default function RootLayout({
           <Header />
           <div className="flex flex-1 overflow-hidden">
             <Sidebar />
-            <main className="flex-1 overflow-x-auto">
-              <div className="h-full overflow-hidden ">{children}</div>
+            <main className="flex-1 overflow-y-auto">
+              <div className="h-full  ">{children}</div>
             </main>
           </div>
         </div></ReduxProvider>
