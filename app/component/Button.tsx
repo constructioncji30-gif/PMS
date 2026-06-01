@@ -5,9 +5,10 @@ type ButtonType = "primary" | "secondary" | "success" | "danger" | "warning" | "
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   varient?: ButtonType;
   className?: string;
+  size?:any;
 }
 
-const Button: React.FC<ButtonProps> = ({ varient = "primary", className = "", children, ...props }) => {
+const Button: React.FC<ButtonProps> = ({ size,varient = "primary", className = "", children, ...props }) => {
   const styles: Record<ButtonType, string> = {
     primary: "bg-primary hover:bg-primaryHover text-white",
     secondary: "bg-secondary hover:bg-secondaryHover text-secondaryText",
@@ -20,7 +21,7 @@ const Button: React.FC<ButtonProps> = ({ varient = "primary", className = "", ch
   return (
     <button
       {...props}
-      className={`px-4 py-1 rounded-full mx-1 font-semibold text-xs shadow-sm ${styles[varient]} ${className}`}
+      className={`px-4 py-1 rounded-full mx-1 font-semibold text-xs shadow-sm ${styles[varient]} ${size} ${className}`}
     >
       {children}
     </button>
