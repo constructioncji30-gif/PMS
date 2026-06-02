@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import CommonCard from "../../component/CommonCard";
+import CommonCard from "@/app/component/CommonCard";
 import { SearchCheck } from "lucide-react";
 import CommonLink from "@/app/component/CommonLink";
 import Button from "@/app/component/Button";
